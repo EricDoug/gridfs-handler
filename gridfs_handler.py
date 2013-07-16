@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # file: gridfs_handler.py
-# brief: custom API for MongoDB GridFS
+# summary: custom API for MongoDB GridFS
 # author: caosiyang <csy3228@gmail.com>
 # date: 2013/05/30
 
@@ -119,37 +119,3 @@ class GridfsHandler:
         except Exception, e:
             print e
             raise e
-
-
-def test():
-    h = GridfsHandler("10.10.135.51", 27017, "pic", "fs")
-    filepath = './logo001.png'
-    retval, id, md5 = h.put(filepath)
-    print "[put] retval: %d, id: %s, md5: %s" % (retval, id, md5)
-    if retval == 0:
-        filecontent = h.get(filepath)
-        if filecontent:
-            print "[get] content length: %d" % len(filecontent)
-    #h.delete(id)
-    h.close()
-
-
-def stability_test():
-    fd = open('log', 'a')
-    h = GridfsHandler("10.10.135.51", 27017, "pic", "fs")
-    for i in range(100000):
-        print >> fd, i
-        retval, id, md5 = h.put("./logo001.png")
-        print >> fd, "retval: %d, id: %s, md5: %s" % (retval, id, md5)
-        if id:
-            filecontent = h.get(id)
-            if filecontent:
-                print >> fd, "content length: %d" % len(filecontent)
-        fd.flush()
-        time.sleep(1)
-    h.close()
-    fd.close()
-
-
-if __name__ == "__main__":
-    test()
