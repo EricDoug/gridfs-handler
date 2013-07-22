@@ -5,11 +5,10 @@
 # author: caosiyang <csy3228@gmail.com>
 # date: 2013/05/30
 
-import os
-import sys
-import random
-import time
+import os, sys, random, time
 from pymongo.mongo_client import MongoClient
+from pymongo.mongo_replica_set_client import MongoReplicaSetClient
+from pymongo.read_preferences import ReadPreference
 from pymongo.database import Database
 from pymongo.collection import Collection
 from bson.objectid import ObjectId
@@ -19,15 +18,28 @@ from gridfs import GridFS
 class GridfsHandler:
     """MongoDB GridFS handler.
     """
-    def __init__(self, host, port, dbname, bucketname="fs"):
+    def __init__(self, host, port, dbname, bucketname="fs", rsname=None):
         """Connect to MongoDB server.
+        If you use replica set, please specify the replica set name.
         """
+        self.client = None
         self.host = host
-        self.port = port
         self.dbname = dbname
         self.bucketname = bucketname
+        self.rsname = rsname
         try:
-            self.client = MongoClient(host=self.host, port=self.port)
+            if rsname:
+                self.client = MongoReplicaSetClient(host, replicaSet=rsname)
+                self.client.read_preference = ReadPreference.PRIMARY_PREFERRED
+                #self.client.read_preference = ReadPreference.SECONDARY_PREFERRED
+                #print self.client.seeds
+                #print self.client.hosts
+                #print self.client.read_preference
+                #print self.client.primary
+                #print self.client.secondaries
+                #print self.client.arbiters
+            else:
+                self.client = MongoClient(host)
             self.db = Database(self.client, self.dbname)
             self.gridfs = GridFS(self.db, self.bucketname)
         except Exception, e:
@@ -116,6 +128,16 @@ class GridfsHandler:
         """
         try:
             self.gridfs.delete(ObjectId(id))
+        except Exception, e:
+            print e
+            raise e
+
+    def drop_database(self):
+        """Drop database.
+        """
+        try:
+            if self.client:
+                self.client.drop_database(self.dbname)
         except Exception, e:
             print e
             raise e
